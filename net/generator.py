@@ -1,5 +1,4 @@
 import tensorflow as tf
-from keras.engine.input_layer import InputLayer
 from tensorflow.keras.layers import Layer, Conv2D, LeakyReLU, DepthwiseConv2D, LayerNormalization
 from tensorflow.keras.models import Model
 
@@ -14,7 +13,10 @@ class CusConv2D(Layer):
                            kernel_initializer=tf.keras.initializers.VarianceScaling(),
                            bias_initializer=tf.constant_initializer(0.0))
 
-    def __call__(self, inputs):
+    def build(self, input_shape):
+        super(CusConv2D, self).build(input_shape)
+
+    def call(self, inputs):
         if self.kernel_size == 3 and self.strides == 1:
             inputs = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="REFLECT")
         if self.kernel_size == 7 and self.strides == 1:
@@ -32,7 +34,10 @@ class Conv2DNormLReLU(Layer):
         self.cus_conv2d = CusConv2D(filters, kernel_size, strides, padding, use_bias)
         self.leaky_relu = LeakyReLU(alpha=0.2)
 
-    def __call__(self, inputs):
+    def build(self, input_shape):
+        super(Conv2DNormLReLU, self).build(input_shape)
+
+    def call(self, inputs):
         x = self.cus_conv2d(inputs)
         x = self.leaky_relu(x)
         return x
@@ -47,26 +52,36 @@ class DwiseConv2D(Layer):
                                                 strides=strides, bias_initializer=tf.constant_initializer(0.0),
                                                 depth_multiplier=channel_multiplier)
 
-    def __call__(self, inputs):
+    def build(self, input_shape):
+        super(DwiseConv2D, self).build(input_shape)
+
+    def call(self, inputs):
         x = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="REFLECT")
         x = self.depthwise_conv2d(x)
         return x
 
 
 class InvertedResidualBlock(Layer):
-    def __init__(self, input_channel, output_dim, stride, bias=None, expansion_ratio=2, ):
+    def __init__(self, output_dim, stride, bias=None, expansion_ratio=2):
         super(InvertedResidualBlock, self).__init__()
         self.output_dim = output_dim
         self.stride = stride
-        bottleneck_dim = round(expansion_ratio * input_channel)
-        self.conv2d_norm_lrelu = Conv2DNormLReLU(bottleneck_dim, kernel_size=1, use_bias=bias)
+        self.bias = bias
+        self.expansion_ratio = expansion_ratio
+        self.conv2d_norm_lrelu = None
         self.dwise_conv2d = DwiseConv2D()
         self.layer_norm = LayerNormalization()
         self.leaky_relu = LeakyReLU(alpha=0.2)
-        self.cus_conv2d = CusConv2D(filters=output_dim, kernel_size=1)
+        self.cus_conv2d = CusConv2D(filters=self.output_dim, kernel_size=1)
         self.layer_norm2 = LayerNormalization()
 
-    def __call__(self, inputs):
+    def build(self, input_shape):
+        input_channel = int(input_shape[-1])
+        bottleneck_dim = round(self.expansion_ratio * input_channel)
+        self.conv2d_norm_lrelu = Conv2DNormLReLU(bottleneck_dim, kernel_size=1, use_bias=self.bias)
+        super(InvertedResidualBlock, self).build(input_shape)
+
+    def call(self, inputs):
         # pw
         net = self.conv2d_norm_lrelu(inputs)
 
@@ -91,7 +106,10 @@ class Unsample(Layer):
         super(Unsample, self).__init__()
         self.conv2d_norm_lrelu = Conv2DNormLReLU(filters, kernel_size=kernel_size)
 
-    def __call__(self, inputs):
+    def build(self, input_shape):
+        super(Unsample, self).build(input_shape)
+
+    def call(self, inputs):
         new_H, new_W = 2 * tf.shape(inputs)[1], 2 * tf.shape(inputs)[2]
         inputs = tf.image.resize(inputs, [new_H, new_W])
         return self.conv2d_norm_lrelu(inputs)
@@ -114,10 +132,10 @@ class Generator(Model):
 
         self.C_block = [
             Conv2DNormLReLU(filters=128),
-            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1, input_channel=128),
-            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1, input_channel=256),
-            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1, input_channel=256),
-            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1, input_channel=256),
+            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1),
+            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1),
+            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1),
+            InvertedResidualBlock(expansion_ratio=2, output_dim=256, stride=1),
             Conv2DNormLReLU(filters=128),
         ]
 
@@ -133,6 +151,9 @@ class Generator(Model):
         ]
 
         self.cus_conv = CusConv2D(filters=3, kernel_size=1, strides=1)
+
+    def build(self, input_shape):
+        super(Generator, self).build(input_shape)
 
     def call(self, inputs):
         x = inputs

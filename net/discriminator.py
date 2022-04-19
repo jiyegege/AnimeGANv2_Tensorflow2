@@ -36,7 +36,10 @@ class Conv(Layer):
                            kernel_initializer=tf.random_normal_initializer(mean=0.0, stddev=0.02),
                            strides=self.stride, use_bias=self.use_bias)
 
-    def __call__(self, inputs):
+    def build(self, input_shape):
+        super(Conv, self).build(input_shape)
+
+    def call(self, inputs):
         x = inputs
         if self.pad_type == 'zero':
             x = tf.pad(x, [[0, 0], [self.pad_top, self.pad_bottom], [self.pad_left, self.pad_right], [0, 0]])
@@ -76,6 +79,9 @@ class Discriminator(Model):
         self.leaky_relu2 = LeakyReLU(alpha=0.2)
 
         self.conv3 = Conv(fiflters=1, kernel=3, stride=1, pad=1, use_bias=False, sn=sn)
+
+    def build(self, input_shape):
+        super(Discriminator, self).build(input_shape)
 
     def call(self, inputs):
         x = self.conv1(inputs)

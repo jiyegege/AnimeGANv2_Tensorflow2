@@ -80,6 +80,8 @@ class AnimeGANv2(object):
 
     def generator(self):
         G = Generator()
+        G.build(input_shape=(None, self.img_size[0], self.img_size[1], self.img_ch))
+        G.summary()
         return G
 
     ##################################################################################
@@ -88,6 +90,8 @@ class AnimeGANv2(object):
 
     def discriminator(self):
         D = Discriminator(self.ch, self.n_dis, self.sn)
+        D.build(input_shape=(None, self.img_size[0], self.img_size[1], self.img_ch))
+        D.summary()
         return D
 
     ##################################################################################
@@ -223,11 +227,16 @@ class AnimeGANv2(object):
                     test_generated_predict = generated.predict(test_real)
                     save_images(test_real, save_path + '{:03d}_a.jpg'.format(i), None)
                     save_images(test_generated_predict, save_path + '{:03d}_b.jpg'.format(i), None)
+                    if i == 0 or i == 26:
+                        with self.writer.as_default(step=epoch):
+                            """" Summary """
+                            tf.summary.image(name='val_data_' + str(i), data=test_generated_predict, step=epoch)
+                            tf.summary.image(name='val_data_' + str(i), data=test_generated_predict, step=epoch)
 
                 save_model_path = 'save_model'
                 if not os.path.exists(save_model_path):
                     os.makedirs(save_model_path)
-                tf.saved_model.save(generated, os.path.join(save_model_path, 'generated'))
+                generated.save(os.path.join(save_model_path, 'generated_'+self.dataset_name), save_format='tf')
 
     @tf.function
     def init_train_step(self, generated, init_optim, epoch, real):
@@ -262,10 +271,10 @@ class AnimeGANv2(object):
         G_optim.apply_gradients(zip(grads, generated.trainable_variables))
         with self.writer.as_default(step=epoch):
             """" Summary """
-            self.G_loss = tf.summary.scalar("Generator_loss", Generator_loss)
+            tf.summary.scalar("Generator_loss", Generator_loss)
 
-            self.G_gan = tf.summary.scalar("G_gan", g_loss)
-            self.G_vgg = tf.summary.scalar("G_pre_model", t_loss)
+            tf.summary.scalar("G_gan", g_loss)
+            tf.summary.scalar("G_pre_model", t_loss)
         return Generator_loss
 
     @tf.function
@@ -293,7 +302,7 @@ class AnimeGANv2(object):
 
         with self.writer.as_default(step=epoch):
             """" Summary """
-            self.D_loss = tf.summary.scalar("Discriminator_loss", d_loss)
+            tf.summary.scalar("Discriminator_loss", d_loss)
 
         return d_loss
 
