@@ -22,7 +22,7 @@ def Huber_loss(x, y):
     return h(x, y)
 
 
-def discriminator_loss(loss_func, real, gray, fake, real_blur):
+def discriminator_loss(loss_func, real, gray, fake, real_blur, step, writer):
     real_loss = 0
     gray_loss = 0
     fake_loss = 0
@@ -57,6 +57,13 @@ def discriminator_loss(loss_func, real, gray, fake, real_blur):
     # for Paprika : 1.0, 1.0, 1.0, 0.005
     # for Shinkai: 1.7, 1.7, 1.7, 1.0
     loss = 1.7 * real_loss + 1.7 * fake_loss + 1.7 * gray_loss + 1.0 * real_blur_loss
+
+    with writer.as_default(step=step):
+        """" Summary """
+        tf.summary.scalar("Discriminator_real_loss", real_loss)
+        tf.summary.scalar("Discriminator_fake_loss", fake_loss)
+        tf.summary.scalar("Discriminator_gray_loss", gray_loss)
+        tf.summary.scalar("Discriminator_real_blur_loss", real_blur_loss)
 
     return loss
 

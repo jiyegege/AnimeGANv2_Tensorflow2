@@ -296,7 +296,7 @@ class AnimeGANv2(object):
 
             d_loss = self.d_adv_weight * discriminator_loss(self.gan_type, d_anime_logit, d_anime_gray_logit,
                                                             generated_logit,
-                                                            d_smooth_logit) + GP
+                                                            d_smooth_logit, epoch, self.writer) + GP
         grads = tape.gradient(d_loss, discriminator.trainable_variables)
         D_optim.apply_gradients(zip(grads, discriminator.trainable_variables))
 
