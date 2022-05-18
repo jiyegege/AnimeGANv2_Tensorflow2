@@ -15,7 +15,7 @@ def parse_args():
     desc = "AnimeGANv2"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--model_dir', type=str, default='save_model/' + 'generated',
+    parser.add_argument('--model_dir', type=str, default='save_model/' + 'generated_Hayao',
                         help='Directory name to save the checkpoints')
     parser.add_argument('--test_dir', type=str, default='dataset/test/t',
                         help='Directory name of test photos')
@@ -45,10 +45,10 @@ def test(model_dir, style_name, test_dir, if_adjust_brightness, img_size=[256, 2
     # stats_graph(tf.get_default_graph())
 
     # print('Processing image: ' + sample_file)
-    sample_file = 'dataset/test/real/19.jpg'
+    sample_file = 'dataset/test/test_photo256/1.png'
     sample_image = np.asarray(load_test_data(sample_file, img_size))
     image_path = os.path.join(result_dir, '{0}'.format(os.path.basename(sample_file)))
-    fake_img = test_generated(sample_image)
+    fake_img = test_generated.predict(sample_image)
     if if_adjust_brightness:
         save_images(fake_img, image_path, sample_file)
     else:

@@ -3,6 +3,7 @@ import tensorflow as tf
 import argparse
 from tools.utils import *
 import os
+import wandb
 
 #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
@@ -57,6 +58,8 @@ def parse_args():
     parser.add_argument('--sample_dir', type=str, default='samples',
                         help='Directory name to save the samples on training')
 
+    parser.add_argument('--hyperparameters', type=bool, default=False)
+
     return check_args(parser.parse_args())
 
 
@@ -101,7 +104,72 @@ def main():
 
     gan = AnimeGANv2(args)
 
-    gan.train()
+    if args.hyperparameters:
+        sweep_config = {
+            'method': 'random',  # grid, random
+            'metric': {
+                'name': 'Discriminator_fake_loss'
+            },
+            'parameters': {
+                'gan_type': {
+                    'values': ['lsgan', 'wgan-gp', 'dragan', 'hinge', 'wgan-lp', 'gan']
+                },
+                'init_lr': {
+                    'values': [2e-4, 2e-5, 2e-6, 3e-4, 3e-5, 3e-6]
+                },
+                'g_lr': {
+                    'values': [2e-5, 2e-6, 2e-7, 3e-5, 3e-6, 3e-7]
+                },
+                'd_lr': {
+                    'values': [4e-5, 4e-6, 4e-7, 5e-5, 5e-6, 5e-7]
+                },
+                'ld': {
+                    'values': [10.0, 11.0, 9.0]
+                },
+                'g_adv_weight': {
+                    'values': [300.0, 150.0, 100.0]
+                },
+                'd_adv_weight': {
+                    'values': [300.0, 150.0, 100.0]
+                },
+                'con_weight': {
+                    'values': [1.5, 2.0, 1.2, 1.5, 1.0]
+                },
+                'sty_weight': {
+                    'values': [2.5, 0.6, 2.0, 1.5, 1.0]
+                },
+                'color_weight': {
+                    'values': [10.0, 50.0, 10.0, 20.0, 30.0]
+                },
+                'tv_weight': {
+                    'values': [1.0, 0.1, 1.2, 1.5, 0.5]
+                },
+                'real_loss_weight': {
+                    'values': [1.2, 1.0, 1.7, 1.5, 0.8]
+                },
+                'fake_loss_weight': {
+                    'values': [1.2, 1.0, 1.7, 1.5, 0.8]
+                },
+                'gray_loss_weight': {
+                    'values': [1.2, 1.0, 1.7, 1.5, 0.8]
+                },
+                'real_blur_loss_weight': {
+                    'values': [0.8, 0.005, 1.0, 0.06, 1.7, 1.2]
+                },
+                'training_rate': {
+                    'values': [1, 2, 4, 6]
+                }
+            },
+            'early_terminate': {
+                'type': 'hyperband',
+                'min_iter': 3
+            }
+        }
+
+        sweep_id = wandb.sweep(sweep_config, entity="roger_ds", project="AnimeGanV2")
+        wandb.agent(sweep_id, gan.train, count=10)
+    else:
+        gan.train()
     print(" [*] Training finished!")
 
 
