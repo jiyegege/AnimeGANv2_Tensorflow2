@@ -51,7 +51,7 @@ class AnimeGANv2(object):
         if self.hyperparameters:
             wandb.init(config=config_defaults, sync_tensorboard=True)
         else:
-            wandb.init(config=config_defaults, project="AnimeGanV2", entity="explained", sync_tensorboard=True)
+            wandb.init(config=config_defaults, project="AnimeGanV2", entity="roger_ds", sync_tensorboard=True)
 
         # Config is a variable that holds and saves hyperparameters and inputs
         self.config = wandb.config
@@ -251,7 +251,8 @@ class AnimeGANv2(object):
                     val_images_tensorboard.append(test_generated_predict)
                 with self.writer.as_default(step=epoch):
                     """" Summary """
-                    tf.summary.image(name='val_data', data=val_images_tensorboard, max_outputs=30, step=epoch)
+                    images = np.reshape(val_images_tensorboard, (-1, 64, 64, 3))
+                    tf.summary.image(name='val_data', data=images, max_outputs=30, step=epoch)
                 wandb.log('val_data', val_images, step=epoch)
                 if not self.hyperparameters:
                     save_model_path = 'save_model'
@@ -271,7 +272,7 @@ class AnimeGANv2(object):
         # wandb.log("G_init", init_loss.numpy(), step=epoch)
         with self.writer.as_default(step=epoch):
             """" Summary """
-            tf.summary.scalar(name='G_init', data=init_loss)
+            tf.summary.scalar(name='G_init_loss', data=init_loss)
 
         return init_loss
 
