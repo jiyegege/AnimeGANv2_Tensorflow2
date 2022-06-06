@@ -1,0 +1,50 @@
+program: train.py
+method: random
+metric:
+  name: Discriminator_fake_loss
+parameters:
+  gan_type:
+    values: ["lsgan", "wgan-gp", "dragan", "hinge", "wgan-lp", "gan"]
+  init_lr:
+    values: [2.0e-4, 2.0e-5, 2.0e-6, 3.0e-4, 3.0e-5, 3.0e-6]
+  g_lr:
+    values: [2.0e-5, 2.0e-6, 2.0e-7, 3.0e-5, 3.0e-6, 3.0e-7]
+  d_lr:
+    values: [4.0e-5, 4.0e-6, 4.0e-7, 5.0e-5, 5.0e-6, 5.0e-7]
+  ld:
+    values: [10.0, 11.0, 9.0]
+  g_adv_weight:
+    values: [300.0, 150.0, 100.0]
+  d_adv_weight:
+    values: [300.0, 150.0, 100.0]
+  con_weight:
+    values: [1.5, 2.0, 1.2, 1.5, 1.0]
+  sty_weight:
+    values: [2.5, 0.6, 2.0, 1.5, 1.0]
+  color_weight:
+    values: [10.0, 50.0, 10.0, 20.0, 30.0]
+  tv_weight:
+    values: [1.0, 0.1, 1.2, 1.5, 0.5]
+  real_loss_weight:
+    values: [1.2, 1.0, 1.7, 1.5, 0.8]
+  fake_loss_weight:
+    values: [1.2, 1.0, 1.7, 1.5, 0.8]
+  gray_loss_weight:
+    values: [1.2, 1.0, 1.7, 1.5, 0.8]
+  real_blur_loss_weight:
+    values: [0.8, 0.005, 1.0, 0.06, 1.7, 1.2]
+  training_rate:
+    values: [1, 2, 4, 6]
+early_terminate:
+  type: hyperband
+  min_iter: 3
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - --config_path
+  - config/config-defaults.yaml
+  - --dataset
+  - Hayao
+  - --hyperparameters
+  - True

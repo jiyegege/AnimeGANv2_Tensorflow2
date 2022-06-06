@@ -9,24 +9,16 @@ from net.generator import Generator
 from tools.data_loader import ImageGenerator
 from tools.ops import *
 from tools.utils import *
+import yaml
 
 
 class AnimeGANv2(object):
     def __init__(self, args):
         self.hyperparameters = args.hyperparameters
-        config_defaults = {'real_loss_weight': 1.7, 'fake_loss_weight': 1.7, 'gray_loss_weight': 1.7,
-                           'real_blur_loss_weight': 1.0, 'epoch': args.epoch, 'init_epoch': args.init_epoch,
-                           'gan_type': args.gan_type, 'batch_size': args.batch_size, 'init_lr': args.init_lr,
-                           'd_lr': args.d_lr, 'g_lr': args.g_lr, 'g_adv_weight': args.g_adv_weight,
-                           'd_adv_weight': args.d_adv_weight, 'con_weight': args.con_weight,
-                           'sty_weight': args.sty_weight, 'color_weight': args.color_weight,
-                           'tv_weight': args.tv_weight, 'training_rate': args.training_rate, 'ld': args.ld}
 
+        config_dict = yaml.load(open(args.config_path, 'r'))
         # Initialize a new wandb run
-        if self.hyperparameters:
-            wandb.init(config=config_defaults, sync_tensorboard=True)
-        else:
-            wandb.init(config=config_defaults, project="AnimeGanV2", entity="roger_ds", sync_tensorboard=True)
+        wandb.init(project="AnimeGanV2", entity="roger_ds", sync_tensorboard=True, config=config_dict)
 
         self.model_name = 'AnimeGANv2'
         self.checkpoint_dir = args.checkpoint_dir
@@ -40,7 +32,6 @@ class AnimeGANv2(object):
         """ Discriminator """
         self.n_dis = args.n_dis
         self.ch = args.ch
-        self.sn = args.sn
 
         self.sample_dir = os.path.join(args.sample_dir, self.model_dir)
         check_folder(self.sample_dir)
@@ -85,7 +76,7 @@ class AnimeGANv2(object):
     ##################################################################################
 
     def discriminator(self):
-        D = Discriminator(self.ch, self.n_dis, self.sn)
+        D = Discriminator(self.ch, self.n_dis, wandb.config.sn)
         D.build(input_shape=(None, self.img_size[0], self.img_size[1], self.img_ch))
         D.summary()
         return D
