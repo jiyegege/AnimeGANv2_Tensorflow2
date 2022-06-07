@@ -1,6 +1,7 @@
 from glob import glob
 
-import wandb
+import keras.layers
+import yaml
 from tensorflow.keras.optimizers import Adam
 from tqdm import tqdm
 
@@ -9,7 +10,6 @@ from net.generator import Generator
 from tools.data_loader import ImageGenerator
 from tools.ops import *
 from tools.utils import *
-import yaml
 
 
 class AnimeGANv2(object):
@@ -85,7 +85,7 @@ class AnimeGANv2(object):
     # Model
     ##################################################################################
     @tf.function
-    def gradient_panalty(self, real, fake):
+    def gradient_panalty(self, real, fake, discriminator):
         if wandb.config.gan_type.__contains__('dragan'):
             eps = tf.random.uniform(shape=tf.shape(real), minval=0., maxval=1.)
             _, x_var = tf.nn.moments(real, axes=[0, 1, 2, 3])
@@ -95,16 +95,10 @@ class AnimeGANv2(object):
 
         alpha = tf.random.uniform(shape=[wandb.config.batch_size, 1, 1, 1], minval=0., maxval=1.)
         interpolated = real + alpha * (fake - real)
-
-        disc = self.discriminator()
-        disc.build(input_shape=[None, self.img_size[0], self.img_size[1], self.img_ch])
-
-        with tf.GradientTape() as tape:
-            tape.watch(interpolated)
-            logit, _ = disc(interpolated)
+        logit = discriminator(interpolated)
         # gradient of D(interpolated)
-        grad = tape.gradients(logit, interpolated)[0]
-        grad_norm = tf.norm(tf.keras.Flatten(grad), axis=1)  # l2 norm
+        grad = tf.gradients(logit, interpolated)[0]
+        grad_norm = tf.norm(keras.layers.Flatten()(grad), axis=1)  # l2 norm
 
         GP = 0
         # WGAN - LP
@@ -291,7 +285,7 @@ class AnimeGANv2(object):
             """ Define Loss """
             if wandb.config.gan_type.__contains__('gp') or wandb.config.gan_type.__contains__('lp') or \
                     wandb.config.gan_type.__contains__('dragan'):
-                GP = self.gradient_panalty(real=anime, fake=fake_image)
+                GP = self.gradient_panalty(real=anime, fake=fake_image, discriminator=discriminator)
             else:
                 GP = 0.0
 
