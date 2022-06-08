@@ -97,11 +97,16 @@ def generator_loss(loss_func, fake):
 
 
 def gram(x):
-    shape_x = tf.shape(x)
-    b = shape_x[0]
-    c = shape_x[3]
-    x = tf.reshape(x, [b, -1, c])
-    return tf.matmul(tf.transpose(x, [0, 2, 1]), x) / tf.cast((tf.size(x) // b), tf.float32)
+    # shape_x = tf.shape(x)
+    # b = shape_x[0]
+    # c = shape_x[3]
+    # x = tf.reshape(x, [b, -1, c])
+    # return tf.matmul(tf.transpose(x, [0, 2, 1]), x) / tf.cast((tf.size(x) // b), tf.float32)
+
+    result = tf.linalg.einsum('bijc,bijd->bcd', x, x)
+    input_shape = tf.shape(x)
+    num_locations = tf.cast(input_shape[1] * input_shape[2], tf.float32)
+    return result / num_locations
 
 
 def con_loss(pre_train_model, real, fake):
