@@ -157,7 +157,7 @@ class AnimeGANv2(object):
                     real = next(real_img_op)[0]
                     anime = next(anime_img_op)[0]
                     anime_gray = next(anime_img_op)[1]
-                    anime_smooth = next(anime_smooth_op)[0]
+                    anime_smooth = next(anime_smooth_op)[1]
 
                     if epoch < wandb.config.init_epoch:
                         init_loss = self.init_train_step(generated, init_optim, epoch, real)

@@ -1,3 +1,6 @@
+# for Hayao : 1.2, 1.2, 1.2, 0.8
+# for Paprika : 1.0, 1.0, 1.0, 0.005
+# for Shinkai: 1.7, 1.7, 1.7, 1.0
 real_loss_weight: 1.7
 fake_loss_weight: 1.7
 gray_loss_weight: 1.7
