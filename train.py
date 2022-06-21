@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--sample_dir', type=str, default='samples',
                         help='Directory name to save the samples on training')
 
-    parser.add_argument('--hyperparameters', type=bool, default=False)
+    parser.add_argument('--hyperparameters', type=str, default='False')
 
     return check_args(parser.parse_args())
 

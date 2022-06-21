@@ -14,9 +14,12 @@ from tools.utils import *
 
 class AnimeGANv2(object):
     def __init__(self, args):
-        self.hyperparameters = args.hyperparameters
+        if args.hyperparameters.lower() == 'true':
+            self.hyperparameters = True
+        else:
+            self.hyperparameters = False
 
-        config_dict = yaml.load(open(args.config_path, 'r'))
+        config_dict = yaml.safe_load(open(args.config_path, 'r'))
         # Initialize a new wandb run
         wandb.init(project="AnimeGanV2", entity="roger_ds", sync_tensorboard=True, config=config_dict)
 
