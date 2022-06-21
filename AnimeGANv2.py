@@ -21,7 +21,7 @@ class AnimeGANv2(object):
 
         config_dict = yaml.safe_load(open(args.config_path, 'r'))
         # Initialize a new wandb run
-        wandb.init(project="AnimeGanV2", entity="roger_ds", sync_tensorboard=True, config=config_dict)
+        wandb.init(project="AnimeGANv2_Tensorflow2", entity="roger_ds", sync_tensorboard=True, config=config_dict)
 
         self.model_name = 'AnimeGANv2'
         self.checkpoint_dir = args.checkpoint_dir
@@ -71,7 +71,7 @@ class AnimeGANv2(object):
     def generator(self):
         G = Generator()
         G.build(input_shape=(None, self.img_size[0], self.img_size[1], self.img_ch))
-        G.summary()
+        # G.summary()
         return G
 
     ##################################################################################
@@ -81,7 +81,7 @@ class AnimeGANv2(object):
     def discriminator(self):
         D = Discriminator(self.ch, self.n_dis, wandb.config.sn)
         D.build(input_shape=(None, self.img_size[0], self.img_size[1], self.img_ch))
-        D.summary()
+        # D.summary()
         return D
 
     ##################################################################################
@@ -206,17 +206,18 @@ class AnimeGANv2(object):
                 # check_folder(save_path)
                 val_images = []
                 for i, sample_file in enumerate(val_files):
-                    print('val: ' + str(i) + sample_file)
+                    # print('val: ' + str(i) + sample_file)
                     sample_image = np.asarray(load_test_data(sample_file, self.img_size))
                     test_real = sample_image
                     test_generated_predict = generated.predict(test_real)
                     # save_images(test_real, save_path + '{:03d}_a.jpg'.format(i), None)
                     # save_images(test_generated_predict, save_path + '{:03d}_b.jpg'.format(i), None)
-                    val_images.append(wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, epoch)))
                     if i == 0 or i == 26 or i == 5:
-                        with self.writer.as_default(step=epoch):
-                            """" Summary """
-                            tf.summary.image(name='val_data_' + str(i), data=test_generated_predict, step=epoch)
+                        val_images.append(
+                            wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, epoch)))
+                        # with self.writer.as_default(step=epoch):
+                        #     """" Summary """
+                        #     tf.summary.image(name='val_data_' + str(i), data=test_generated_predict, step=epoch)
                 wandb.log({'val_data': val_images}, step=epoch)
                 if not self.hyperparameters:
                     save_model_path = 'save_model'
