@@ -6,3 +6,6 @@
 /dataset/
 /.idea/
 /wandb/
+/**/__pycache__/
+/.vscode/
+/**/.ipynb_checkpoints/
