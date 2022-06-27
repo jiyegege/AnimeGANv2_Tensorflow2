@@ -23,6 +23,7 @@ python train.py --config_path config/config-defaults.yaml --dataset Hayao --hype
 - `--config_path`配置文件路径默认在`config/config-defaults.yaml`下面，里面是项目的超参数配置
 - `--dataset`数据集的名字
 - `--hyperparameters`是否启用wandb的超参数搜索
+- `--pre_train_weight`预训练权重，可加载以前训练好的模型权重进行微调后再训练成新的模型
 
 ### 测试
 

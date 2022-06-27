@@ -23,6 +23,7 @@ python train.py --config_path config/config-defaults.yaml --dataset Hayao --hype
 - `--config_path` the configuration file path is under `config/config-defaults.yaml` by default, which is the hyperparameter configuration of the project
 - `--dataset` the name of the dataset
 - `--hyperparameters` whether to enable hyperparameter search for wandb
+- `--pre_train_weight` Pre-training weights, which can be loaded with previously trained model weights for fine-tuning and then trained into a new model
 
 ### Testing
 

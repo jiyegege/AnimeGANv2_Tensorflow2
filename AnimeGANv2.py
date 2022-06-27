@@ -48,6 +48,8 @@ class AnimeGANv2(object):
 
         self.p_model = local_variables_init()
 
+        self.pre_train_weight = args.pre_train_weight
+
         print()
         print("##### Information #####")
         print("# gan type : ", wandb.config.gan_type)
@@ -140,15 +142,20 @@ class AnimeGANv2(object):
                                          D_optim=D_optim)
 
         # restore check-point if it exits
-        could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-        if could_load:
-            start_epoch = checkpoint_counter + 1
-
-            print(" [*] Load SUCCESS")
-        else:
+        if self.pre_train_weight:
+            self.load_pre_weight(self.pre_train_weight)
             start_epoch = 0
+            print("Load pre-trained weight Success!")
+        else:
+            could_load, checkpoint_counter = self.load(self.checkpoint_dir)
+            if could_load:
+                start_epoch = checkpoint_counter + 1
 
-            print(" [!] Load failed...")
+                print(" [*] Load SUCCESS")
+            else:
+                start_epoch = 0
+
+                print(" [!] Load failed...")
 
         init_mean_loss = []
         mean_loss = []
@@ -341,3 +348,12 @@ class AnimeGANv2(object):
         else:
             print(" [*] Failed to find a checkpoint")
             return False, 0
+
+    def load_pre_weight(self, checkpoint_dir):
+        print(" [*] Reading load pre train checkpoints...")
+        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)  # checkpoint file information
+
+        if ckpt and ckpt.model_checkpoint_path:
+            ckpt_name = os.path.basename(ckpt.model_checkpoint_path)  # first line
+            self.saver.restore(os.path.join(checkpoint_dir, ckpt_name))
+            print(" [*] Success to read {}".format(os.path.join(checkpoint_dir, ckpt_name)))
