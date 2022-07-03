@@ -138,8 +138,8 @@ class AnimeGANv2(object):
         D_optim = Adam(wandb.config.d_lr, beta_1=0.5, beta_2=0.999)
 
         # saver to save model
-        self.saver = tf.train.Checkpoint(generated=generated, discriminator=discriminator, G_optim=G_optim,
-                                         D_optim=D_optim)
+        self.saver = tf.train.Checkpoint(generated=generated, discriminator=discriminator, p_model=self.p_model,
+                                         G_optim=G_optim, D_optim=D_optim)
 
         # restore check-point if it exits
         if self.pre_train_weight:
