@@ -138,7 +138,7 @@ class AnimeGANv2(object):
         D_optim = Adam(wandb.config.d_lr, beta_1=0.5, beta_2=0.999)
 
         # saver to save model
-        self.saver = tf.train.Checkpoint(generated=generated, discriminator=discriminator, p_model=self.p_model,
+        self.saver = tf.train.Checkpoint(generated=generated, discriminator=discriminator,
                                          G_optim=G_optim, D_optim=D_optim)
 
         # restore check-point if it exits
@@ -178,13 +178,8 @@ class AnimeGANv2(object):
                         if (step + 1) % 200 == 0:
                             init_mean_loss.clear()
                     else:
-                        if j == wandb.config.training_rate:
-                            # Update D network
-                            d_loss = self.d_train_step(real, anime, anime_gray, anime_smooth,
-                                                       generated, discriminator, D_optim, epoch)
-
-                        # Update G network
-                        g_loss = self.g_train_step(real, anime_gray, generated, discriminator, G_optim, epoch)
+                        g_loss, d_loss = self.train_step(real, anime_gray, anime, anime_smooth, generated,
+                                                         discriminator, G_optim, D_optim, epoch, j)
 
                         mean_loss.append([d_loss, g_loss])
                         tbar.set_description('Epoch %d' % epoch)
@@ -249,11 +244,12 @@ class AnimeGANv2(object):
         return init_loss
 
     @tf.function
-    def g_train_step(self, real, anime_gray, generated,
-                     discriminator, G_optim, epoch):
+    def train_step(self, real, anime_gray, anime, anime_smooth, generated,
+                   discriminator, G_optim,  D_optim, epoch, j):
         with tf.GradientTape() as tape:
             fake_image = generated(real)
             generated_logit = discriminator(fake_image)
+
             # gan
             c_loss, s_loss = con_sty_loss(self.p_model, real, anime_gray, fake_image)
             tv_loss = wandb.config.tv_weight * total_variation_loss(fake_image)
@@ -263,15 +259,36 @@ class AnimeGANv2(object):
             g_loss = wandb.config.g_adv_weight * generator_loss(wandb.config.gan_type, generated_logit)
             Generator_loss = t_loss + g_loss
 
-        grads = tape.gradient(Generator_loss, generated.trainable_variables)
-        G_optim.apply_gradients(zip(grads, generated.trainable_variables))
+            if j == wandb.config.training_rate:
+                # discriminator
+                d_anime_logit = discriminator(anime)
+                d_anime_gray_logit = discriminator(anime_gray)
+                d_smooth_logit = discriminator(anime_smooth)
 
-        # wandb.log("Generator_loss", Generator_loss.numpy(), step=epoch)
-        # wandb.log("G_con_loss", c_loss.numpy(), step=epoch)
-        # wandb.log("G_sty_loss", s_loss.numpy(), step=epoch)
-        # wandb.log("G_color_loss", col_loss.numpy(), step=epoch)
-        # wandb.log("G_gan_loss", g_loss.numpy(), step=epoch)
-        # wandb.log("G_pre_model_loss", t_loss.numpy(), step=epoch)
+
+                """ Define Loss """
+                if wandb.config.gan_type.__contains__('gp') or wandb.config.gan_type.__contains__('lp') or \
+                        wandb.config.gan_type.__contains__('dragan'):
+                    GP = self.gradient_panalty(real=anime, fake=fake_image, discriminator=discriminator)
+                else:
+                    GP = 0.0
+
+                d_loss = wandb.config.d_adv_weight * discriminator_loss(wandb.config.gan_type, d_anime_logit,
+                                                                        d_anime_gray_logit,
+                                                                        generated_logit,
+                                                                        d_smooth_logit, epoch, self.writer,
+                                                                        wandb.config.real_loss_weight,
+                                                                        wandb.config.fake_loss_weight,
+                                                                        wandb.config.gray_loss_weight,
+                                                                        wandb.config.real_blur_loss_weight) + GP
+
+        g_grads = tape.gradient(Generator_loss, generated.trainable_variables)
+        G_optim.apply_gradients(zip(g_grads, generated.trainable_variables))
+
+        if j == wandb.config.training_rate:
+            d_grads = tape.gradient(d_loss, discriminator.trainable_variables)
+            D_optim.apply_gradients(zip(d_grads, discriminator.trainable_variables))
+
         with self.writer.as_default(step=epoch):
             """" Summary """
             tf.summary.scalar("Generator_loss", Generator_loss)
@@ -281,41 +298,10 @@ class AnimeGANv2(object):
 
             tf.summary.scalar("G_gan_loss", g_loss)
             tf.summary.scalar("G_pre_model_loss", t_loss)
-        return Generator_loss
 
-    @tf.function
-    def d_train_step(self, real, anime, anime_gray, anime_smooth, generated, discriminator,
-                     D_optim, epoch):
-
-        with tf.GradientTape() as tape:
-            fake_image = generated(real)
-            d_anime_logit = discriminator(anime)
-            d_anime_gray_logit = discriminator(anime_gray)
-            d_smooth_logit = discriminator(anime_smooth)
-            generated_logit = discriminator(fake_image)
-            """ Define Loss """
-            if wandb.config.gan_type.__contains__('gp') or wandb.config.gan_type.__contains__('lp') or \
-                    wandb.config.gan_type.__contains__('dragan'):
-                GP = self.gradient_panalty(real=anime, fake=fake_image, discriminator=discriminator)
-            else:
-                GP = 0.0
-
-            d_loss = wandb.config.d_adv_weight * discriminator_loss(wandb.config.gan_type, d_anime_logit,
-                                                                   d_anime_gray_logit,
-                                                                   generated_logit,
-                                                                   d_smooth_logit, epoch, self.writer,
-                                                                   wandb.config.real_loss_weight,
-                                                                   wandb.config.fake_loss_weight,
-                                                                   wandb.config.gray_loss_weight,
-                                                                   wandb.config.real_blur_loss_weight) + GP
-        grads = tape.gradient(d_loss, discriminator.trainable_variables)
-        D_optim.apply_gradients(zip(grads, discriminator.trainable_variables))
-
-        with self.writer.as_default(step=epoch):
-            """" Summary """
-            tf.summary.scalar("Discriminator_loss", d_loss)
-
-        return d_loss
+            if j == wandb.config.training_rate:
+                tf.summary.scalar("Discriminator_loss", d_loss)
+        return Generator_loss, d_loss
 
     @property
     def model_dir(self):
