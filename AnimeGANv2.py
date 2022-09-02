@@ -246,7 +246,7 @@ class AnimeGANv2(object):
     @tf.function
     def train_step(self, real, anime_gray, anime, anime_smooth, generated,
                    discriminator, G_optim,  D_optim, epoch, j):
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             fake_image = generated(real)
             generated_logit = discriminator(fake_image)
 
