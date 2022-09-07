@@ -341,5 +341,5 @@ class AnimeGANv2(object):
 
         if ckpt and ckpt.model_checkpoint_path:
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)  # first line
-            self.saver.restore(os.path.join(checkpoint_dir, ckpt_name))
+            self.saver.restore(tf.train.latest_checkpoint(checkpoint_dir))
             print(" [*] Success to read {}".format(os.path.join(checkpoint_dir, ckpt_name)))

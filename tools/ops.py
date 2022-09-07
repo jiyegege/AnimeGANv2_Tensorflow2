@@ -1,9 +1,6 @@
 import tensorflow as tf
+from tensorflow.keras.applications.vgg19 import VGG19
 import wandb
-from tensorflow import keras
-from tensorflow.keras.layers import Conv2D
-
-from tensorflow_addons.layers import SpectralNormalization
 
 
 def relu(x):
@@ -138,16 +135,10 @@ def con_sty_loss(pre_train_model, real, anime, fake):
 
 def local_variables_init():
     inputs = tf.keras.Input([256, 256, 3])
-    model = tf.keras.applications.MobileNetV2(
-        include_top=False,
-        alpha=1.3,
-        weights='imagenet',
-        input_tensor=inputs,
-        pooling=None,
-        classes=1000)
+    model = VGG19(include_top=False, weights='imagenet', input_tensor=inputs)
     p_model: tf.keras.Model = tf.keras.Model(
         inputs,
-        model.get_layer('block_6_expand').output)
+        model.get_layer('block4_conv4').output)
     p_model.trainable = False
     return p_model
 
