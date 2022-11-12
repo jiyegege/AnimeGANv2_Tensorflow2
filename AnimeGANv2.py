@@ -2,7 +2,7 @@ from glob import glob
 
 import keras.layers
 import yaml
-from tensorflow.keras.optimizers import Adam
+from keras.optimizers import Adam
 from tqdm import tqdm
 
 from net.discriminator import Discriminator
@@ -10,6 +10,7 @@ from net.generator import Generator
 from tools.data_loader import ImageGenerator
 from tools.ops import *
 from tools.utils import *
+from net.backtone import VGGCaffePreTrained
 
 
 class AnimeGANv2(object):
@@ -46,7 +47,8 @@ class AnimeGANv2(object):
                                                      self.img_size, wandb.config.batch_size)
         self.dataset_num = max(self.real_image_generator.num_images, self.anime_image_generator.num_images)
 
-        self.p_model = local_variables_init()
+        self.p_model = VGGCaffePreTrained()
+        self.p_model.trainable = False
 
         self.pre_train_weight = args.pre_train_weight
 
@@ -72,7 +74,7 @@ class AnimeGANv2(object):
 
     def generator(self):
         G = Generator()
-        G.build(input_shape=(None, self.img_size[0], self.img_size[1], self.img_ch))
+        G.build(input_shape=(None, None, None, self.img_ch))
         # G.summary()
         return G
 
@@ -82,7 +84,7 @@ class AnimeGANv2(object):
 
     def discriminator(self):
         D = Discriminator(self.ch, self.n_dis, wandb.config.sn)
-        D.build(input_shape=(None, self.img_size[0], self.img_size[1], self.img_ch))
+        D.build(input_shape=(None, None, None, self.img_ch))
         # D.summary()
         return D
 

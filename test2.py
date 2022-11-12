@@ -35,7 +35,7 @@ def load_model(model_dir):
     return model
 
 
-def test(model_dir, style_name, test_dir, if_adjust_brightness, img_size=[256, 256]):
+def test(model_dir, style_name, test_dir, if_adjust_brightness, img_size=[1248, 1248]):
     # tf.reset_default_graph()
     result_dir = 'results/' + style_name
     check_folder(result_dir)
@@ -46,7 +46,7 @@ def test(model_dir, style_name, test_dir, if_adjust_brightness, img_size=[256, 2
     # stats_graph(tf.get_default_graph())
 
     # print('Processing image: ' + sample_file)
-    sample_file = 'dataset/test/test_photo256/31.png'
+    sample_file = 'dataset/test/HR_photo/1 (1).jpg'
     sample_image = np.asarray(load_test_data(sample_file, img_size))
     image_path = os.path.join(result_dir, '{0}'.format(os.path.basename(sample_file)))
     fake_img = test_generated.predict(sample_image)

@@ -5,8 +5,8 @@ real_loss_weight: 1.2
 fake_loss_weight: 1.2
 gray_loss_weight: 1.2
 real_blur_loss_weight: 0.8
-epoch: 101
-init_epoch: 10
+epoch: 20
+init_epoch: 0
 gan_type: "lsgan"
 batch_size: 10
 init_lr: 2.0e-4

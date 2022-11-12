@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Conv2D, LeakyReLU, DepthwiseConv2D, LayerNormalization
-from tensorflow.keras.models import Model
+from keras.layers import Layer, Conv2D, LeakyReLU, DepthwiseConv2D, LayerNormalization
+from keras.models import Model
 
 
 class CusConv2D(Layer):
