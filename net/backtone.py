@@ -70,7 +70,6 @@ class VGGCaffePreTrained(Model):
                 number = 1
             else:
                 weight = self.get_conv_filter(data_dict, f'conv{block}_{number}')
-
                 bias = self.get_bias(data_dict, f'conv{block}_{number}')
                 conv2d = Conv2D(v, kernel_size=(3, 3), padding='same', use_bias=True,
                                 kernel_initializer=tf.keras.initializers.Constant(weight),
