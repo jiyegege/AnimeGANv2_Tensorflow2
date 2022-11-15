@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Layer, Conv2D, LeakyReLU, LayerNormalization
+from keras.models import Model
+from keras.layers import Layer, Conv2D, LeakyReLU, LayerNormalization
 from tensorflow_addons.layers import SpectralNormalization
 
 

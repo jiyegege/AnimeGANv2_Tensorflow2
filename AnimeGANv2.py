@@ -10,7 +10,7 @@ from net.generator import Generator
 from tools.data_loader import ImageGenerator
 from tools.ops import *
 from tools.utils import *
-from net.backtone import VGGCaffePreTrained
+from net.backtone import VGGCaffePreTrained, VGG19Conv4
 import wandb
 
 
@@ -48,7 +48,7 @@ class AnimeGANv2(object):
                                                      self.img_size, wandb.config.batch_size)
         self.dataset_num = max(self.real_image_generator.num_images, self.anime_image_generator.num_images)
 
-        self.p_model = VGGCaffePreTrained()
+        self.p_model = VGG19Conv4()
         self.p_model.trainable = False
 
         self.pre_train_weight = args.pre_train_weight
