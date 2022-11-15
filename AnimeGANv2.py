@@ -49,7 +49,6 @@ class AnimeGANv2(object):
         self.dataset_num = max(self.real_image_generator.num_images, self.anime_image_generator.num_images)
 
         self.p_model = VGG19Conv4()
-        self.p_model.trainable = False
 
         self.pre_train_weight = args.pre_train_weight
 
@@ -252,13 +251,6 @@ class AnimeGANv2(object):
                        + wandb.config.gray_loss_weight * gray_loss + wandb.config.real_blur_loss_weight * real_blur_loss
                 d_loss = wandb.config.d_adv_weight * loss
 
-                with self.writer.as_default(step=epoch):
-                    """" Summary """
-                    tf.summary.scalar("Discriminator_real_loss", real_loss)
-                    tf.summary.scalar("Discriminator_fake_loss", fake_loss)
-                    tf.summary.scalar("Discriminator_gray_loss", gray_loss)
-                    tf.summary.scalar("Discriminator_real_blur_loss", real_blur_loss)
-
         g_grads = tape.gradient(Generator_loss, generated.trainable_variables)
         G_optim.apply_gradients(zip(g_grads, generated.trainable_variables))
 
@@ -277,7 +269,12 @@ class AnimeGANv2(object):
             tf.summary.scalar("G_pre_model_loss", t_loss)
 
             if j == wandb.config.training_rate:
+                """" Summary """
                 tf.summary.scalar("Discriminator_loss", d_loss)
+                tf.summary.scalar("Discriminator_real_loss", real_loss)
+                tf.summary.scalar("Discriminator_fake_loss", fake_loss)
+                tf.summary.scalar("Discriminator_gray_loss", gray_loss)
+                tf.summary.scalar("Discriminator_real_blur_loss", real_blur_loss)
         return Generator_loss, d_loss
 
     @property
