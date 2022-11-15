@@ -1,10 +1,10 @@
 import tensorflow as tf
-from keras.layers import Layer, Conv2D, LeakyReLU, DepthwiseConv2D, LayerNormalization
+from keras.layers import Layer, Conv2D, LeakyReLU, DepthwiseConv2D, LayerNormalization, ZeroPadding2D
 from keras.models import Model
 
 
 class CusConv2D(Layer):
-    def __init__(self, filters, kernel_size=3, strides=1, padding='VALID', use_bias=None):
+    def __init__(self, filters, kernel_size=3, strides=1, padding='valid', use_bias=None):
         super(CusConv2D, self).__init__()
         self.kernel_size = kernel_size
         self.strides = strides
@@ -18,7 +18,7 @@ class CusConv2D(Layer):
 
     def call(self, inputs):
         if self.kernel_size == 3 and self.strides == 1:
-            inputs = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="REFLECT")
+            inputs = ZeroPadding2D()(inputs)
         if self.kernel_size == 7 and self.strides == 1:
             inputs = tf.pad(inputs, [[0, 0], [3, 3], [3, 3], [0, 0]], mode="REFLECT")
         if self.strides == 2:
@@ -29,7 +29,7 @@ class CusConv2D(Layer):
 
 
 class Conv2DNormLReLU(Layer):
-    def __init__(self, filters, kernel_size=3, strides=1, padding='VALID', use_bias=None):
+    def __init__(self, filters, kernel_size=3, strides=1, padding='valid', use_bias=None):
         super(Conv2DNormLReLU, self).__init__()
         self.cus_conv2d = CusConv2D(filters, kernel_size, strides, padding, use_bias)
         self.leaky_relu = LeakyReLU(alpha=0.2)
