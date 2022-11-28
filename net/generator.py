@@ -10,15 +10,14 @@ class CusConv2D(Layer):
         self.strides = strides
         self.conv = Conv2D(filters=filters, kernel_size=kernel_size, strides=strides,
                            padding=padding, use_bias=use_bias,
-                           kernel_initializer=tf.keras.initializers.VarianceScaling(),
-                           bias_initializer=tf.constant_initializer(0.0))
+                           kernel_initializer=tf.keras.initializers.VarianceScaling())
 
     def build(self, input_shape):
         super(CusConv2D, self).build(input_shape)
 
     def call(self, inputs):
         if self.kernel_size == 3 and self.strides == 1:
-            inputs = ZeroPadding2D()(inputs)
+            inputs = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode="REFLECT")
         if self.kernel_size == 7 and self.strides == 1:
             inputs = tf.pad(inputs, [[0, 0], [3, 3], [3, 3], [0, 0]], mode="REFLECT")
         if self.strides == 2:
@@ -32,6 +31,7 @@ class Conv2DNormLReLU(Layer):
     def __init__(self, filters, kernel_size=3, strides=1, padding='valid', use_bias=None):
         super(Conv2DNormLReLU, self).__init__()
         self.cus_conv2d = CusConv2D(filters, kernel_size, strides, padding, use_bias)
+        self.layer_norm = LayerNormalization()
         self.leaky_relu = LeakyReLU(alpha=0.2)
 
     def build(self, input_shape):
@@ -39,17 +39,18 @@ class Conv2DNormLReLU(Layer):
 
     def call(self, inputs):
         x = self.cus_conv2d(inputs)
+        x = self.layer_norm(x)
         x = self.leaky_relu(x)
         return x
 
 
 class DwiseConv2D(Layer):
-    def __init__(self, kernel_size=3, strides=1, padding='VALID', channel_multiplier=1, use_bias=True):
+    def __init__(self, kernel_size=3, strides=1, padding='valid', channel_multiplier=1, use_bias=True):
         super(DwiseConv2D, self).__init__()
         self.depthwise_conv2d = DepthwiseConv2D(kernel_size=kernel_size, padding=padding,
                                                 use_bias=use_bias,
                                                 depthwise_initializer=tf.keras.initializers.VarianceScaling(),
-                                                strides=strides, bias_initializer=tf.constant_initializer(0.0),
+                                                strides=strides,
                                                 depth_multiplier=channel_multiplier)
 
     def build(self, input_shape):

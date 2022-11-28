@@ -54,7 +54,7 @@ def style_loss(style, fake):
 def con_sty_loss(pre_train_model, real, anime, fake):
     real_feature_map = pre_train_model(real, training=False)
     fake_feature_map = pre_train_model(fake, training=False)
-    anime_feature_map = pre_train_model(anime, training=False)
+    anime_feature_map = pre_train_model(anime[:fake_feature_map.shape[0]], training=False)
     c_loss = L1_loss(real_feature_map, fake_feature_map)
     s_loss = style_loss(anime_feature_map, fake_feature_map)
     return c_loss, s_loss

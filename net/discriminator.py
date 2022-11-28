@@ -19,22 +19,18 @@ class Conv(Layer):
             self.pad_left = pad
             self.pad_right = kernel - stride - self.pad_left
 
-        self.sn = sn
-        self.fiflters = fiflters
         self.pad_type = pad_type
-        self.use_bias = use_bias
-        self.stride = stride
-        self.kernel = kernel
-        self.spectral_norm = SpectralNormalization(Conv2D(filters=self.fiflters, kernel_size=self.kernel,
-                                                          kernel_initializer=tf.random_normal_initializer(mean=0.0,
-                                                                                                          stddev=0.02),
-                                                          padding='VALID', use_bias=self.use_bias,
-                                                          strides=self.stride,
-                                                          bias_initializer=tf.constant_initializer(0.0)))
-        self.conv = Conv2D(filters=self.fiflters,
-                           kernel_size=self.kernel,
-                           kernel_initializer=tf.random_normal_initializer(mean=0.0, stddev=0.02),
-                           strides=self.stride, use_bias=self.use_bias)
+        if sn:
+            self.conv = SpectralNormalization(Conv2D(filters=fiflters, kernel_size=kernel,
+                                                     kernel_initializer=tf.random_normal_initializer(mean=0.0,
+                                                                                                     stddev=0.02),
+                                                     padding='valid', use_bias=use_bias,
+                                                     strides=stride))
+        else:
+            self.conv = Conv2D(filters=fiflters,
+                               kernel_size=kernel,
+                               kernel_initializer=tf.random_normal_initializer(mean=0.0, stddev=0.02),
+                               strides=stride, use_bias=use_bias)
 
     def build(self, input_shape):
         super(Conv, self).build(input_shape)
@@ -46,11 +42,7 @@ class Conv(Layer):
         if self.pad_type == 'reflect':
             x = tf.pad(x, [[0, 0], [self.pad_top, self.pad_bottom], [self.pad_left, self.pad_right], [0, 0]],
                        mode='REFLECT')
-
-        if self.sn:
-            x = self.spectral_norm(x)
-        else:
-            x = self.conv(x)
+        x = self.conv(x)
         return x
 
 
@@ -69,13 +61,13 @@ class Discriminator(Model):
             self.listLayers.append(LeakyReLU(alpha=0.2))
 
             self.listLayers.append(Conv(channel * 4, kernel=3, stride=1, pad=1, use_bias=False, sn=sn))
-            self.listLayers.append(LayerNormalization(axis=-1, center=True, scale=True))
+            self.listLayers.append(LayerNormalization())
             self.listLayers.append(LeakyReLU(alpha=0.2))
 
             channel = channel * 2
 
         self.conv2 = Conv(channel * 2, kernel=3, stride=1, pad=1, use_bias=False, sn=sn)
-        self.layer_norm2 = LayerNormalization(axis=-1, center=True, scale=True)
+        self.layer_norm2 = LayerNormalization()
         self.leaky_relu2 = LeakyReLU(alpha=0.2)
 
         self.conv3 = Conv(fiflters=1, kernel=3, stride=1, pad=1, use_bias=False, sn=sn)
