@@ -33,10 +33,12 @@ def generator_loss(fake):
 
 
 def gram(x):
-    result = tf.linalg.einsum('bijc,bijd->bcd', x, x)
-    input_shape = tf.shape(x)
-    num_locations = tf.cast(input_shape[1] * input_shape[2], tf.float32)
-    return result / num_locations
+    feat = tf.linalg.einsum('bijc,bijd->bcd', x, x)
+    num_locations = tf.math.reduce_prod(x.shape[1:])
+    num_locations = tf.cast(num_locations, dtype=tf.float32)
+
+    feat = feat / num_locations
+    return feat
 
 
 def con_loss(pre_train_model, real, fake):
